@@ -1,725 +1,129 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سیگنال — دستیار هوش مصنوعی</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0B0F14;
-    --panel: #131A23;
-    --panel-raised: #1A222E;
-    --line: #26303E;
-    --text: #F1EEE7;
-    --text-muted: #8B93A1;
-    --amber: #E8A33D;
-    --amber-dim: #6B5326;
-    --teal: #4FD1C5;
-    --teal-dim: #245E58;
-    --danger: #E8615F;
-    --radius: 10px;
-  }
-
-  * { box-sizing: border-box; }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Vazirmatn', sans-serif;
-    min-height: 100%;
-  }
-
-  body {
-    background-image:
-      radial-gradient(circle at 15% 10%, rgba(232,163,61,0.06), transparent 40%),
-      radial-gradient(circle at 85% 90%, rgba(79,209,197,0.06), transparent 40%);
-  }
-
-  .mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  ::selection { background: var(--amber-dim); color: var(--text); }
-
-  :focus-visible {
-    outline: 2px solid var(--amber);
-    outline-offset: 2px;
-  }
-
-  /* ---------- layout shell ---------- */
-
-  .shell {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 20px 18px 40px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ---------- header / instrument bar ---------- */
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 18px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    margin-bottom: 18px;
-  }
-
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .brand-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--amber);
-    box-shadow: 0 0 0 3px var(--amber-dim);
-    flex-shrink: 0;
-  }
-
-  .brand-dot.busy {
-    animation: blink 1.1s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.25; }
-  }
-
-  .brand-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.25;
-  }
-
-  .brand-text .name {
-    font-weight: 800;
-    font-size: 16px;
-    letter-spacing: 0.02em;
-  }
-
-  .brand-text .status {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 0.02em;
-  }
-
-  /* mode switch styled like a rocker toggle */
-
-  .switch {
-    display: flex;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 3px;
-    gap: 2px;
-  }
-
-  .switch button {
-    all: unset;
-    cursor: pointer;
-    font-family: 'Vazirmatn', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 7px 16px;
-    border-radius: 999px;
-    color: var(--text-muted);
-    transition: color 0.2s ease, background 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .switch button[data-active="true"][data-mode="chat"] {
-    background: var(--amber-dim);
-    color: #FBEAD0;
-  }
-
-  .switch button[data-active="true"][data-mode="vision"] {
-    background: var(--teal-dim);
-    color: #D5F5F1;
-  }
-
-  .switch button .tick {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: 0.9;
-  }
-
-  /* ---------- signal meter (shared loading signature) ---------- */
-
-  .meter {
-    display: inline-flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 16px;
-  }
-
-  .meter span {
-    display: block;
-    width: 3px;
-    border-radius: 2px;
-    background: var(--amber);
-    animation: pulse 0.9s ease-in-out infinite;
-  }
-
-  .meter.teal span { background: var(--teal); }
-
-  .meter span:nth-child(1) { height: 40%; animation-delay: 0s; }
-  .meter span:nth-child(2) { height: 100%; animation-delay: 0.12s; }
-  .meter span:nth-child(3) { height: 65%; animation-delay: 0.24s; }
-  .meter span:nth-child(4) { height: 85%; animation-delay: 0.36s; }
-  .meter span:nth-child(5) { height: 50%; animation-delay: 0.48s; }
-
-  @keyframes pulse {
-    0%, 100% { transform: scaleY(0.35); opacity: 0.55; }
-    50% { transform: scaleY(1); opacity: 1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .meter span, .brand-dot.busy { animation: none !important; }
-  }
-
-  /* ---------- modules ---------- */
-
-  main { flex: 1; display: flex; flex-direction: column; }
-
-  .module {
-    display: none;
-    flex: 1;
-    flex-direction: column;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .module[data-visible="true"] { display: flex; }
-
-  .module-head {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-
-  .module-head h1 {
-    font-size: 15px;
-    margin: 0;
-    font-weight: 700;
-  }
-
-  .module-head .hint {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  /* ---------- chat module ---------- */
-
-  .chat-log {
-    flex: 1;
-    padding: 20px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    overflow-y: auto;
-    min-height: 320px;
-    max-height: 55vh;
-  }
-
-  .empty-note {
-    margin: auto;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 13px;
-    max-width: 320px;
-    line-height: 1.9;
-  }
-
-  .bubble {
-    max-width: 82%;
-    padding: 11px 15px;
-    border-radius: 14px;
-    font-size: 14.5px;
-    line-height: 1.85;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .bubble.user {
-    align-self: flex-start;
-    background: var(--amber-dim);
-    color: #FBEAD0;
-    border-bottom-left-radius: 4px;
-  }
-
-  .bubble.assistant {
-    align-self: flex-end;
-    background: var(--panel-raised);
-    border: 1px solid var(--line);
-    border-bottom-right-radius: 4px;
-  }
-
-  .bubble.error {
-    align-self: flex-end;
-    background: rgba(232,97,95,0.1);
-    border: 1px solid rgba(232,97,95,0.4);
-    color: #F4B4B2;
-  }
-
-  .composer {
-    display: flex;
-    gap: 10px;
-    padding: 14px 16px;
-    border-top: 1px solid var(--line);
-  }
-
-  .composer textarea {
-    flex: 1;
-    resize: none;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    color: var(--text);
-    font-family: 'Vazirmatn', sans-serif;
-    font-size: 14px;
-    padding: 11px 14px;
-    line-height: 1.6;
-    max-height: 120px;
-  }
-
-  .composer textarea:focus { border-color: var(--amber); }
-
-  .send-btn, .analyze-btn {
-    all: unset;
-    cursor: pointer;
-    background: var(--amber);
-    color: #221604;
-    font-family: 'Vazirmatn', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 0 20px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: filter 0.15s ease, opacity 0.15s ease;
-  }
-
-  .send-btn:hover, .analyze-btn:hover { filter: brightness(1.08); }
-  .send-btn:disabled, .analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-  /* ---------- vision module ---------- */
-
-  .vision-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 20px 18px;
-    gap: 16px;
-  }
-
-  .dropzone {
-    border: 1.5px dashed var(--line);
-    border-radius: 12px;
-    background: var(--bg);
-    padding: 28px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
-  }
-
-  .dropzone:hover, .dropzone.drag {
-    border-color: var(--teal);
-    background: rgba(79,209,197,0.05);
-  }
-
-  .dropzone .icon {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 22px;
-    color: var(--teal);
-    margin-bottom: 8px;
-  }
-
-  .dropzone p {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 13px;
-  }
-
-  .dropzone input { display: none; }
-
-  .preview-wrap {
-    display: none;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
-  .preview-wrap[data-visible="true"] { display: flex; }
-
-  .preview-wrap img {
-    width: 96px;
-    height: 96px;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    flex-shrink: 0;
-  }
-
-  .preview-meta {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .preview-meta .fname {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--teal);
-  }
-
-  .clear-btn {
-    all: unset;
-    cursor: pointer;
-    font-size: 12px;
-    color: var(--text-muted);
-    width: fit-content;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  .clear-btn:hover { color: var(--danger); }
-
-  .vision-question {
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    color: var(--text);
-    font-family: 'Vazirmatn', sans-serif;
-    font-size: 14px;
-    padding: 11px 14px;
-    resize: none;
-  }
-
-  .vision-question:focus { border-color: var(--teal); }
-
-  .analyze-btn {
-    background: var(--teal);
-    align-self: flex-start;
-    padding: 11px 22px;
-  }
-
-  .vision-result {
-    display: none;
-    background: var(--panel-raised);
-    border: 1px solid var(--line);
-    border-right: 3px solid var(--teal);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 14.5px;
-    line-height: 1.9;
-    white-space: pre-wrap;
-  }
-
-  .vision-result[data-visible="true"] { display: block; }
-
-  footer {
-    text-align: center;
-    color: var(--text-muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    padding-top: 18px;
-    letter-spacing: 0.03em;
-  }
-
-  @media (max-width: 560px) {
-    header { flex-direction: column; align-items: stretch; gap: 12px; }
-    .switch { justify-content: center; }
-    .bubble { max-width: 92%; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator & Unit Converter</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="calculator">Calculator</button>
+                <button class="tab-btn" data-tab="converter">Converter</button>
+            </div>
+        </header>
 
-<div class="shell">
+        <main class="app-main">
+            <div class="content-wrapper">
+                <div class="main-panel">
+                    <!-- Calculator Tab -->
+                    <section id="calculator" class="tab-content active">
+                <div class="calculator-container">
+                    <div class="display-container">
+                        <div class="expression-display" id="expression-display"></div>
+                        <input type="text" class="main-display" id="main-display" value="0" readonly>
+                    </div>
 
-  <header>
-    <div class="brand">
-      <span class="brand-dot" id="brandDot"></span>
-      <div class="brand-text">
-        <span class="name">سیگنال</span>
-        <span class="status mono" id="statusLine">آماده دریافت</span>
-      </div>
+                    <div class="keypad">
+                        <!-- Controls -->
+                        <button class="key control" data-action="clear-entry">CE</button>
+                        <button class="key control" data-action="clear-all">C</button>
+                        <button class="key control" data-action="backspace">⌫</button>
+                        <button class="key operator" data-value="/">/</button>
+
+                        <!-- Scientific Row 1 -->
+                        <button class="key sci" data-action="sin">sin</button>
+                        <button class="key sci" data-action="cos">cos</button>
+                        <button class="key sci" data-action="tan">tan</button>
+                        <button class="key operator" data-value="*">*</button>
+
+                        <!-- Scientific Row 2 -->
+                        <button class="key sci" data-action="log">log</button>
+                        <button class="key sci" data-action="ln">ln</button>
+                        <button class="key sci" data-action="sqrt">√</button>
+                        <button class="key operator" data-value="-">-</button>
+
+                        <!-- Scientific Row 3 -->
+                        <button class="key sci" data-action="pow">x^y</button>
+                        <button class="key sci" data-value="(">(</button>
+                        <button class="key sci" data-value=")">)</button>
+                        <button class="key operator" data-value="+">+</button>
+
+                        <!-- Scientific Row 4 / Numbers -->
+                        <button class="key sci" data-value="Math.PI">π</button>
+                        <button class="key number" data-value="7">7</button>
+                        <button class="key number" data-value="8">8</button>
+                        <button class="key number" data-value="9">9</button>
+
+                        <!-- Numbers -->
+                        <button class="key sci" data-value="Math.E">e</button>
+                        <button class="key number" data-value="4">4</button>
+                        <button class="key number" data-value="5">5</button>
+                        <button class="key number" data-value="6">6</button>
+
+                        <!-- Numbers & Equals -->
+                        <button class="key sci empty"></button>
+                        <button class="key number" data-value="1">1</button>
+                        <button class="key number" data-value="2">2</button>
+                        <button class="key number" data-value="3">3</button>
+
+                        <!-- Bottom Row -->
+                        <button class="key sci empty"></button>
+                        <button class="key number" data-value="0">0</button>
+                        <button class="key number" data-value=".">.</button>
+                        <button class="key equals" data-action="calculate">=</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Converter Tab -->
+            <section id="converter" class="tab-content">
+                <div class="converter-container">
+                    <div class="converter-group">
+                        <label for="conv-category">Category</label>
+                        <select id="conv-category" class="conv-select">
+                            <option value="length">Length</option>
+                            <option value="mass">Weight/Mass</option>
+                            <option value="temperature">Temperature</option>
+                            <option value="data">Data/Storage</option>
+                        </select>
+                    </div>
+
+                    <div class="converter-box">
+                        <div class="converter-input-group">
+                            <input type="number" id="conv-from-val" class="conv-input" value="1">
+                            <select id="conv-from-unit" class="conv-select"></select>
+                        </div>
+
+                        <div class="converter-swap">
+                            <button id="conv-swap-btn">⇅</button>
+                        </div>
+
+                        <div class="converter-input-group">
+                            <input type="number" id="conv-to-val" class="conv-input" readonly>
+                            <select id="conv-to-unit" class="conv-select"></select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+                </div>
+
+                <!-- History Panel -->
+                <aside class="history-panel">
+                    <div class="history-header">
+                        <h3>History</h3>
+                        <button id="clear-history-btn" class="clear-history-btn">Clear</button>
+                    </div>
+                    <ul id="history-list" class="history-list">
+                        <!-- History items will be injected here -->
+                    </ul>
+                </aside>
+            </div>
+        </main>
     </div>
-    <div class="switch">
-      <button type="button" data-mode="chat" data-active="true" id="tabChat">
-        <span class="tick"></span> چت
-      </button>
-      <button type="button" data-mode="vision" data-active="false" id="tabVision">
-        <span class="tick"></span> بینایی
-      </button>
-    </div>
-  </header>
-
-  <main>
-
-    <!-- CHAT MODULE -->
-    <section class="module" data-visible="true" id="moduleChat">
-      <div class="module-head">
-        <h1>چت هوش مصنوعی</h1>
-        <span class="hint mono">متن → پاسخ</span>
-      </div>
-
-      <div class="chat-log" id="chatLog">
-        <div class="empty-note">
-          یه پیام بفرست تا گفت‌وگو شروع بشه.<br>
-          هر سوالی داری، همینجا بپرس.
-        </div>
-      </div>
-
-      <form class="composer" id="chatForm">
-        <textarea id="chatInput" rows="1" placeholder="پیامت رو بنویس…" required></textarea>
-        <button type="submit" class="send-btn" id="chatSend">ارسال</button>
-      </form>
-    </section>
-
-    <!-- VISION MODULE -->
-    <section class="module" data-visible="false" id="moduleVision">
-      <div class="module-head">
-        <h1>تحلیل تصویر</h1>
-        <span class="hint mono">عکس → توضیح</span>
-      </div>
-
-      <div class="vision-body">
-        <div class="dropzone" id="dropzone">
-          <div class="icon">▲</div>
-          <p>روی این کادر کلیک کن یا عکس رو بکش و رها کن</p>
-          <input type="file" id="fileInput" accept="image/*">
-        </div>
-
-        <div class="preview-wrap" id="previewWrap">
-          <img id="previewImg" alt="پیش‌نمایش تصویر">
-          <div class="preview-meta">
-            <span class="fname mono" id="fileName"></span>
-            <button type="button" class="clear-btn" id="clearImage">حذف عکس</button>
-          </div>
-        </div>
-
-        <textarea class="vision-question" id="visionQuestion" rows="2" placeholder="سوالت درباره عکس چیه؟ (اختیاری — خالی بذاری، توضیح کلی می‌ده)"></textarea>
-
-        <button type="button" class="analyze-btn" id="analyzeBtn" disabled>تحلیل کن</button>
-
-        <div class="vision-result mono" id="visionResult" style="font-family: 'Vazirmatn', sans-serif;"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer>ساخته‌شده با Gemini · پردازش هر درخواست چند ثانیه طول می‌کشد</footer>
-
-</div>
-
-<script>
-  // ---------- mode switching ----------
-  const tabChat = document.getElementById('tabChat');
-  const tabVision = document.getElementById('tabVision');
-  const moduleChat = document.getElementById('moduleChat');
-  const moduleVision = document.getElementById('moduleVision');
-
-  function setMode(mode) {
-    const isChat = mode === 'chat';
-    tabChat.dataset.active = isChat;
-    tabVision.dataset.active = !isChat;
-    moduleChat.dataset.visible = isChat;
-    moduleVision.dataset.visible = !isChat;
-  }
-  tabChat.addEventListener('click', () => setMode('chat'));
-  tabVision.addEventListener('click', () => setMode('vision'));
-
-  // ---------- shared busy indicator ----------
-  const brandDot = document.getElementById('brandDot');
-  const statusLine = document.getElementById('statusLine');
-
-  function setBusy(isBusy, label) {
-    brandDot.classList.toggle('busy', isBusy);
-    statusLine.textContent = label || (isBusy ? 'در حال پردازش…' : 'آماده دریافت');
-  }
-
-  function meterHTML(colorClass) {
-    return `<span class="meter ${colorClass || ''}"><span></span><span></span><span></span><span></span><span></span></span>`;
-  }
-
-  // ---------- Gemini API helper ----------
-  // کلید API رایگان خودت رو از Google AI Studio اینجا بذار
-  const GEMINI_API_KEY = "AQ.Ab8RN6LuyISO4sBGeJwSjTpF9WY3aepwN8HdUXN8OhBVrGuOrg";
-  const GEMINI_MODEL = "gemini-3.6-flash";
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-  async function askGemini(contents) {
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
-    });
-    if (!response.ok) {
-      throw new Error('پاسخی از سرور دریافت نشد (کد ' + response.status + ')');
-    }
-    const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('\n');
-    if (!text) throw new Error('پاسخ خالی بود.');
-    return text;
-  }
-
-  // ---------- CHAT MODULE ----------
-  const chatLog = document.getElementById('chatLog');
-  const chatForm = document.getElementById('chatForm');
-  const chatInput = document.getElementById('chatInput');
-  const chatSend = document.getElementById('chatSend');
-
-  let history = [];
-  let emptyNoteEl = chatLog.querySelector('.empty-note');
-
-  function addBubble(text, kind) {
-    if (emptyNoteEl) { emptyNoteEl.remove(); emptyNoteEl = null; }
-    const div = document.createElement('div');
-    div.className = 'bubble ' + kind;
-    div.textContent = text;
-    chatLog.appendChild(div);
-    chatLog.scrollTop = chatLog.scrollHeight;
-    return div;
-  }
-
-  chatInput.addEventListener('input', () => {
-    chatInput.style.height = 'auto';
-    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-  });
-
-  chatForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const text = chatInput.value.trim();
-    if (!text) return;
-
-    addBubble(text, 'user');
-    history.push({ role: 'user', parts: [{ text }] });
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-
-    chatSend.disabled = true;
-    setBusy(true, 'در حال فکر کردن…');
-    const thinkingBubble = addBubble('', 'assistant');
-    thinkingBubble.innerHTML = meterHTML();
-
-    try {
-      const reply = await askGemini(history);
-      history.push({ role: 'model', parts: [{ text: reply }] });
-      thinkingBubble.textContent = reply;
-    } catch (err) {
-      thinkingBubble.remove();
-      addBubble('پاسخ دریافت نشد: ' + err.message + ' — دوباره امتحان کن.', 'error');
-      history.pop();
-    } finally {
-      chatSend.disabled = false;
-      setBusy(false);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
-  });
-
-  // ---------- VISION MODULE ----------
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('fileInput');
-  const previewWrap = document.getElementById('previewWrap');
-  const previewImg = document.getElementById('previewImg');
-  const fileName = document.getElementById('fileName');
-  const clearImage = document.getElementById('clearImage');
-  const visionQuestion = document.getElementById('visionQuestion');
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  const visionResult = document.getElementById('visionResult');
-
-  let currentImage = null; // { base64, mediaType, name }
-
-  dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('drag');
-    if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
-  });
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) loadImage(fileInput.files[0]);
-  });
-
-  function loadImage(file) {
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      currentImage = { base64, mediaType: file.type, name: file.name };
-      previewImg.src = reader.result;
-      fileName.textContent = file.name;
-      previewWrap.dataset.visible = 'true';
-      analyzeBtn.disabled = false;
-      visionResult.dataset.visible = 'false';
-      visionResult.textContent = '';
-    };
-    reader.readAsDataURL(file);
-  }
-
-  clearImage.addEventListener('click', () => {
-    currentImage = null;
-    fileInput.value = '';
-    previewWrap.dataset.visible = 'false';
-    analyzeBtn.disabled = true;
-    visionResult.dataset.visible = 'false';
-    visionResult.textContent = '';
-  });
-
-  analyzeBtn.addEventListener('click', async () => {
-    if (!currentImage) return;
-    const question = visionQuestion.value.trim() || 'این عکس چیه؟ توضیح بده.';
-
-    analyzeBtn.disabled = true;
-    setBusy(true, 'در حال دیدن عکس…');
-    visionResult.dataset.visible = 'true';
-    visionResult.innerHTML = meterHTML('teal');
-
-    try {
-      const contents = [{
-        role: 'user',
-        parts: [
-          { inline_data: { mime_type: currentImage.mediaType, data: currentImage.base64 } },
-          { text: question }
-        ]
-      }];
-      const reply = await askGemini(contents);
-      visionResult.textContent = reply;
-    } catch (err) {
-      visionResult.textContent = 'تحلیل انجام نشد: ' + err.message + ' — دوباره امتحان کن.';
-    } finally {
-      analyzeBtn.disabled = false;
-      setBusy(false);
-    }
-  });
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
